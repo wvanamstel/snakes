@@ -1,75 +1,34 @@
-import json
-import os
-from glob import glob
-
 import numpy as np
+import os
 import torch
-from PIL import Image
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
-from config import BATCH_SIZE, LR, NUM_EPOCHS, TRANSFORMS, USE_CUDA
-from model import SimpleCNN
-from util import SnakeData, find_corrupt_images, find_image_stats
+from glob import glob
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 
 DATA_PATH = os.path.join(os.environ["LOCAL_DATA_PATH"], "crowdai", "snakes")
-# WRITER = SummaryWriter()
-np.random.seed(0)
 
-# Get image file names, and remove corrupt files
 with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
-    classes = [cl.split(",") for cl in f_in.readlines()[1:]]
-    label_to_classname = {_cl[1].rstrip(): _cl[0] for _cl in classes}
-    label_to_idx = {i: label for label, i in enumerate(label_to_classname.keys())}
-train_samples = set(glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True))
+    classes = [cl.split(',') for cl in f_in.readlines()[1:]]
+    label_to_id = {_cl[1].rstrip(): _cl[0] for _cl in classes}
 
-with open(os.path.join(DATA_PATH, "corrupt_images.json"), "r") as f_in:
-    corrupt_images = set(json.load(f_in))
-train_samples = list(train_samples.difference(corrupt_images))
-np.random.shuffle(train_samples)
+train_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
 
-# Create data loaders
-num_train_samples = int(0.85 * len(train_samples))
-num_test_samples = int(0.05 * num_train_samples)
-val_samples = train_samples[num_train_samples + num_test_samples :]
-test_samples = train_samples[num_train_samples : num_train_samples + num_test_samples]
-train_samples = train_samples[:num_train_samples]
+class SnakeData(Dataset):
+    def __init__(self, file_names, transformation=None):
+        self.file_names = file_names
+        self.transformation = transformation
+        self.label_to_id = label_to_id
 
-train_data = SnakeData(train_samples, label_to_idx, TRANSFORMS["train"])
-train_loader = DataLoader(
-    train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=0
-)
-val_data = SnakeData(val_samples, label_to_idx, TRANSFORMS["val"])
-val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    def __len__(self):
+        return len(self.file_names)
 
-# Init model
-model = SimpleCNN()
-# model.half()
-if USE_CUDA:
-    model.cuda()
+    def __get_item__(self, idx):
+        image_file = self.file_names[idx]
+        image = Image.open(image_file).convert("RGB")
+        _id = image_file.spli("/")[-2].split("-")[1]
+        if self.transformation:
+            self.transformation(image)
+        return image, _id
 
-optimiser = torch.optim.Adam(model.parameters(), lr=LR)
-loss_function = torch.nn.CrossEntropyLoss()
 
-for ep in range(NUM_EPOCHS):
-    model.train()
-    for idx, (data, labels) in enumerate(train_loader):
-        if USE_CUDA:
-            data = data.cuda()
-            labels = labels.cuda()
-        data = Variable(data)
-        labels = Variable(labels)
-        optimiser.zero_grad()
-        output = model(data)
-        loss = loss_function(output, labels)
-        loss.backward()
-        optimiser.step()
-
-        preds = output.data.max(1)[1]
-        correct = preds.eq(labels.data).cpu().sum().item()
-        accuracy = correct / len(data)
-        if not idx % 5 * BATCH_SIZE:
-            print(
-                f"Train Epoch: {ep+1}/{NUM_EPOCHS} [{idx*len(data)}/{len(train_loader.dataset)} ({100*idx/len(train_loader):.2f}%)]\tLoss: {loss.item():.4f}\tAccuracy: {correct}/{len(data)}, {accuracy:.2f}"
-            )
