@@ -1,6 +1,5 @@
 import numpy as np
 
-from collections import defaultdict
 from PIL import Image
 from torch.utils.data import Dataset
 
@@ -24,11 +23,11 @@ def find_image_stats(file_name_sample):
             {
                 "width": {
                     "m": np.average(widths),
-                    "s": np.var(widths)
+                    "s": np.std(widths)
                     },
                 "height": {
                     "m": np.average(heights),
-                    "s": np.var(heights)
+                    "s": np.std(heights)
                     }
                 },
             "RGB":
@@ -50,11 +49,6 @@ def find_image_stats(file_name_sample):
 
     return stats
 
-def _find_average(data, axis):
-    return np.average([np.average(im, axis=axis) for im in data])
-
-def _find_var(data, axis):
-    return np.average([np.var(im, axis=axis) for im in  data])
 
 # Can also use loaders from torchvision
 class SnakeData(Dataset):

@@ -18,7 +18,5 @@ with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
     label_to_classname = {_cl[1].rstrip(): _cl[0] for _cl in classes}
 train_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
 np.random.shuffle(train_samples)
-stats = find_image_stats(train_samples[:100])
-
 
 
