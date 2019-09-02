@@ -49,20 +49,29 @@ def find_image_stats(file_name_sample):
 
     return stats
 
+def find_corrupt_images(file_names):
+    invalid = []
+    for f_in in file_names:
+        try:
+            i=Image.open(f_in)
+        except OSError:
+            invalid.append(f_in)
+    return invalid
 
 # Can also use loaders from torchvision
 class SnakeData(Dataset):
-    def __init__(self, file_names, transformation=None):
+    def __init__(self, file_names, label_to_idx, transformation=None):
         self.file_names = file_names
         self.transformation = transformation
+        self.label_to_idx = label_to_idx
 
     def __len__(self):
         return len(self.file_names)
 
-    def __get_item__(self, idx):
+    def __getitem__(self, idx):
         image_file = self.file_names[idx]
         image = Image.open(image_file).convert("RGB")
-        label = image_file.spli("/")[-2].split("-")[1]
+        label = self.label_to_idx[image_file.split("/")[-2].split("-")[1]]
         if self.transformation:
-            self.transformation(image)
+            image = self.transformation(image)
         return image, label
