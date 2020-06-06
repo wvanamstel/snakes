@@ -1,10 +1,10 @@
 import json
-import numpy as np
 import os
-import torch
-
 from glob import glob
+import numpy as np
 from PIL import Image
+
+import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
