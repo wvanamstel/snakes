@@ -18,7 +18,6 @@ MASK_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "anno")
 
 WRITER = SummaryWriter()
 
-
 def transform_image(train):
     transforms = []
     transforms.append(T.ToTensor())
