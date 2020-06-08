@@ -1,9 +1,16 @@
+import ipdb
 import glob
 import os
 from xml.etree import cElementTree as ElementTree
 
 import torch
 import torchvision
+import xml
+import utils
+
+from engine import train_one_epoch, evaluate
+from xml.etree import cElementTree as ElementTree
+from parse_xml import XmlDictConfig
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as T
@@ -67,7 +74,6 @@ class SnakeSegmentationDataset(object):
 
     def __len__(self):
         return len(self.image_file_names)
-
 
 def get_segmentation_model(num_classes):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
