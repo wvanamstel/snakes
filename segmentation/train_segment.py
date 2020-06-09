@@ -1,4 +1,3 @@
-import ipdb
 import glob
 import os
 import torch
@@ -14,6 +13,7 @@ from torchvision import transforms as T
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 DATA_PATH = os.environ["LOCAL_DATA_PATH"]
 MASK_PATH = os.path.join(DATA_PATH, 'aicrowd', 'snakes', 'anno')
+
 
 def transform_image(train):
     transforms = []
@@ -72,12 +72,13 @@ def main():
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
-    
-    indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-15])
-    dataset_test = torch.utils.data.Subset(dataset, indices[-15:])
+    dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=utils.collate_fn)
+    indices = torch.randperm(len(dataset)).tolist()
+    dataset = torch.utils.data.Subset(dataset, indices[:-10])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-10:])
+
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=4, collate_fn=utils.collate_fn)
     data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=4, collate_fn=utils.collate_fn)
 
     model = get_segmentation_model(num_classes)
@@ -93,8 +94,7 @@ def main():
     for epoch in range(num_epochs):
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         lr_scheduler.step()
-        ipdb.set_trace()
-        # evaluate(model, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device)
 
 main()
 
