@@ -1,4 +1,3 @@
-import ipdb
 import glob
 import os
 from xml.etree import cElementTree as ElementTree
@@ -24,6 +23,7 @@ DATA_PATH = os.environ["DATA_PATH"]
 MASK_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "anno")
 
 WRITER = SummaryWriter()
+
 
 def transform_image(train):
     transforms = []
