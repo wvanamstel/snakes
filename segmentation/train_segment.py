@@ -28,7 +28,7 @@ class SnakeSegmentationDataset(object):
         self.transforms = transforms
         mask_file_names = glob.glob(os.path.join(MASK_PATH, '*.xml'))
         mask_data = [XmlDictConfig(ElementTree.parse(f).getroot()) for f in mask_file_names]
-        self.image_file_names = [mask.get("path") for mask in mask_data]
+        self.image_file_names = [DATA_PATH + mask.get("path").split('data')[1] for mask in mask_data]
         self.bbox_data = [mask.get("object").get("bndbox") for mask in mask_data]
 
     def __getitem__(self, idx):
@@ -70,7 +70,7 @@ def get_segmentation_model(num_classes):
 def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    num_classes = 2
+    num_classes = 10
     dataset = SnakeSegmentationDataset(transform_image(train=True))
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
