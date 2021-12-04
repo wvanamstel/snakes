@@ -84,7 +84,6 @@ def get_segmentation_model(num_classes):
 
 def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    torch.seed()
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
