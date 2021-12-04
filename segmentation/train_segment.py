@@ -69,18 +69,20 @@ def get_segmentation_model(num_classes):
 
 def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    torch.seed()
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
     indices = torch.randperm(len(dataset)).tolist()
+    print(indices)
     num_examples = len(indices)
     dataset = torch.utils.data.Subset(dataset, indices[:-int(num_examples*0.2)])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-int(num_examples*0.2):])
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=4, collate_fn=utils.collate_fn)
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=False, num_workers=4, collate_fn=utils.collate_fn)
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=utils.collate_fn)
+    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=2, shuffle=False, num_workers=4, collate_fn=utils.collate_fn)
 
     model = get_segmentation_model(num_classes)
     model.to(device)
@@ -90,7 +92,7 @@ def main():
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-    num_epochs = 10
+    num_epochs = 2
 
     for epoch in range(num_epochs):
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
