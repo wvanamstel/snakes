@@ -1,11 +1,11 @@
 import glob
 import os
-import xml
 from xml.etree import cElementTree as ElementTree
 
 import torch
 import torchvision
 from PIL import Image
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as T
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
@@ -15,6 +15,8 @@ from parse_xml import XmlDictConfig
 
 DATA_PATH = os.environ["DATA_PATH"]
 MASK_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "anno")
+
+WRITER = SummaryWriter()
 
 
 def transform_image(train):
