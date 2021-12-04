@@ -1,15 +1,10 @@
 import glob
 import os
+import xml
 from xml.etree import cElementTree as ElementTree
 
 import torch
 import torchvision
-import xml
-import utils
-
-from engine import train_one_epoch, evaluate
-from xml.etree import cElementTree as ElementTree
-from parse_xml import XmlDictConfig
 from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as T
@@ -75,6 +70,7 @@ class SnakeSegmentationDataset(object):
     def __len__(self):
         return len(self.image_file_names)
 
+
 def get_segmentation_model(num_classes):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -83,7 +79,7 @@ def get_segmentation_model(num_classes):
 
 
 def main():
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
