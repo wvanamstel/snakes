@@ -69,14 +69,15 @@ def get_segmentation_model(num_classes):
 
 def main():
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    torch.seed()
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
-    indices = torch.randperm(len(dataset)).tolist()
-    print(indices)
+    rand_gen = torch.Generator()
+    rand_gen.manual_seed(31415926)
+    indices = torch.randperm(len(dataset), generator=rand_gen).tolist()
+
     num_examples = len(indices)
     dataset = torch.utils.data.Subset(dataset, indices[:-int(num_examples*0.2)])
     dataset_test = torch.utils.data.Subset(dataset_test, indices[-int(num_examples*0.2):])
