@@ -83,7 +83,8 @@ def get_segmentation_model(num_classes):
 
 
 def main():
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    torch.seed()
 
     num_classes = 2
     dataset = SnakeSegmentationDataset(transform_image(train=True))
@@ -118,7 +119,7 @@ def main():
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-    num_epochs = 10
+    num_epochs = 2
 
     for epoch in range(num_epochs):
         train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
