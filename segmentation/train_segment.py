@@ -11,7 +11,7 @@ from parse_xml import XmlDictConfig
 from PIL import Image
 from torchvision import transforms as T
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-DATA_PATH = os.environ["LOCAL_DATA_PATH"]
+DATA_PATH = os.environ["DATA_PATH"]
 MASK_PATH = os.path.join(DATA_PATH, 'aicrowd', 'snakes', 'anno')
 
 
