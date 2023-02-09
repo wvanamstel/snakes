@@ -85,7 +85,7 @@ def main():
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
     rand_gen = torch.Generator()
-    rand_gen.manual_seed(31415926)
+    rand_gen.manual_seed(0)
     indices = torch.randperm(len(dataset), generator=rand_gen).tolist()
 
     num_examples = len(indices)
