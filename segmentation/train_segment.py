@@ -16,8 +16,9 @@ from parse_xml import XmlDictConfig
 
 DATA_PATH = os.environ["DATA_PATH"]
 MASK_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "anno")
+LOG_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "logs")
 
-WRITER = SummaryWriter()
+WRITER = SummaryWriter(log_dir=LOG_PATH)
 
 
 def transform_image(train):
@@ -82,12 +83,14 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     num_classes = 2
+    batch_size = 3
     dataset = SnakeSegmentationDataset(transform_image(train=True))
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
     rand_gen = torch.Generator()
     rand_gen.manual_seed(0)
     indices = torch.randperm(len(dataset), generator=rand_gen).tolist()
+    # indices = indices[:50]
 
     num_examples = len(indices)
     dataset = torch.utils.data.Subset(dataset, indices[: -int(num_examples * 0.2)])
@@ -96,11 +99,11 @@ def main():
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=2, shuffle=True, num_workers=4, collate_fn=utils.collate_fn
+        dataset, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=utils.collate_fn
     )
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test,
-        batch_size=2,
+        batch_size=batch_size,
         shuffle=False,
         num_workers=4,
         collate_fn=utils.collate_fn,
@@ -114,12 +117,20 @@ def main():
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-    num_epochs = 2
+    num_epochs = 20
 
+    eval_results = []
+    training_metrics = []
     for epoch in range(num_epochs):
-        train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+        metrics = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+        WRITER.add_scalar("Segmentation/train loss", metrics.meters["loss"].avg, epoch)
+        training_metrics.append(metrics)
         lr_scheduler.step()
-        evaluate(model, data_loader_test, device=device)
+        results = evaluate(model, data_loader_test, device=device)
+        WRITER.add_scalars("Segmentation/Avg Precision", {"IoU=0.50": results.coco_eval['bbox'].stats[1], "IoU=0.50:0.95": results.coco_eval['bbox'].stats[0]}, epoch)
+        WRITER.add_scalars("Segmentation/Avg Recall", {"IoU=0.50:0.95": results.coco_eval['bbox'].stats[8]}, epoch)
+        eval_results.append(results)
+    return model, results, training_metrics
 
 
-main()
+model, results, metrics, = main()
