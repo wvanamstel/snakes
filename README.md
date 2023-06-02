@@ -1,4 +1,4 @@
 Lorem ipsum
 
-![Alt text](./Segmentation_train loss(1).svg)
+![Alt text](./Segmentation_train_loss.svg)
 
