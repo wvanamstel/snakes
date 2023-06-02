@@ -35,8 +35,12 @@ Around epoch 11-13 the performance curve levels off around **mAP=0.81 for IoU=0.
 Here is the curve for the average recall over 20 epochs:  
 <img
 src="./imgs/Segmentation_avg_P.svg"
-alt"Average Recall"
+alt="Average Recall"
 width"500">
 Around epoch 13 the performance levels off around **R=0.58**
 
-Both these metrics support the decision to stop training the segmentation model after 13 epochs.
+Both these metrics support the decision to stop training the segmentation model after 13 epochs. The model performs quite well at segmenting out the snakes from a given out-of-training sample image, some examples:
+<p allign="middle">
+<img src="./imgs/segm_snake1.jpg" width="400" />
+<img src="./imgs/segm_snake3.jpg" width="400" />
+</p>
