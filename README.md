@@ -40,11 +40,11 @@ width"500">
 Around epoch 13 the performance levels off around **R=0.58**
 
 Both these metrics support the decision to stop training the segmentation model after 13 epochs. The model performs quite well at segmenting out the snakes from a given out-of-training sample image, some examples:
-<p allign="top">
+<p allign="middle">
 <img src="./imgs/segm_snake1.jpg" width="400" />
-<img src="./imgs/segm_snake3.jpg" width="400" />
+<img src="./imgs/segm_snake5.jpg" width="400" />
 </p>  
 <p allign="middle">
+<img src="./imgs/segm_snake3.jpg" width="400" />
 <img src="./imgs/segm_snake2.jpg" width="400" />
-<img src="./imgs/segm_snake5.jpg" width="400" />
 </p>  
