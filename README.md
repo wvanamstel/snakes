@@ -25,18 +25,18 @@ width="500">
 
 The loss is minimized around epoch 8 and then again around epoch 13. The segmentation to be used in the classification pipeline was trained for 13 epochs. The performance metrics on the test set support stopping at epoch 13 in stead of epoch 8 in this case.
 
-Below is the mean average precision for an IoU=0.50 (dark blue line) as well as for an IoU=0.50:0.95 (light blue line) for the duration of 20 epochs.  
+Below is the mean average precision for an IoU=0.50 (dark blue line) as well as for an IoU=0.50:0.95 (light blue line) for the duration of 20 epochs:  
 <img
 src="./imgs/Segmentation_avg_P.svg"
 alt="mean Average Precision"
-width="500">
-Around epoch 11-13 the performance curve levels off around *mAP=0.81 for IoU=0.50* and *mAP=045 for IoU=0.95*
+width="500">  
+Around epoch 11-13 the performance curve levels off around **mAP=0.81 for IoU=0.50** and **mAP=045 for IoU=0.95**
 
-Here is the curve for the average recall over 20 epochs: 
+Here is the curve for the average recall over 20 epochs:  
 <img
 src="./imgs/Segmentation_avg_P.svg"
 alt"Average Recall"
-widt"500>"
-Around epoch 13 the performance levels off around *R=0.58*
+width"500">
+Around epoch 13 the performance levels off around **R=0.58**
 
 Both these metrics support the decision to stop training the segmentation model after 13 epochs.
