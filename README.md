@@ -3,7 +3,7 @@ This repo contains code to classify the species of snakes given an images of var
 
 The goal of the challenge is to provide a classification algorithm to better determine which antivenom to administer to a victim of a snakebite, given a photo of the snake.
 
-The input images are very diverse (urban/nature background) and a snake can be located all over image. Here are some examples of input images:
+The input images are very diverse (urban/nature background) and a snake can be located all over image. Here are some examples of input images:  
 <img
 src="./imgs/snakes_examples.jpg"
 alt="Example of raw input images">
