@@ -22,6 +22,11 @@ WRITER = SummaryWriter(log_dir=LOG_PATH)
 
 
 def transform_image(train):
+    """transform_image.
+    Transform images for segmentation model training
+
+    :param train:
+    """
     transforms = []
     transforms.append(T.ToTensor())
     if train:
