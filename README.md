@@ -12,7 +12,7 @@ The data set consists of 45 classes is quite unbalanced:
 <img
 src="./imgs/class_chart.jpg">
 
-Some descriptive statistics of the data:
+Some descriptive statistics of the number of examples:
 * median = 1232
 * mean = 1836
 * stdev = 1839
@@ -61,3 +61,8 @@ Both these metrics support the decision to stop training the segmentation model 
 
 In the above images is it clear that the segmentation model can do quite well. In the two images on the left side the shape of the snake is not obstructed by some other object. In the images on the right side, the model struggles a bit because part of the snake is partly obstructed from view.  
 Overall though, the segmentation model does quite well and will benefit the performance of a classification model in a preprocessing step.
+
+
+#### Classification model (WIP)
+* Preprocess the input images using the segmentation model
+* Fine tune (probably) resnet101 for the classification task
