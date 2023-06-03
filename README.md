@@ -47,7 +47,7 @@ Here is the curve for the average recall over 20 epochs:
 <img
 src="./imgs/Segmentation_avg_R.svg"
 alt="Average Recall"
-width="500">
+width="500">  
 Around epoch 13 the performance levels off around **R=0.58**
 
 Both these metrics support the decision to stop training the segmentation model after 13 epochs. The model performs quite well at segmenting out the snakes from a given out-of-training sample image, some examples of segmentations:  
