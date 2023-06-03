@@ -8,6 +8,16 @@ The input images are very diverse (urban/nature background) and a snake can be l
 src="./imgs/snakes_examples.jpg"
 alt="Example of raw input images">
 
+The data set consists of 45 classes is quite unbalanced:  
+<img
+src="./imgs/class_chart.jpg">
+
+Some descriptive statistics of the data:
+* median = 1232
+* mean = 1836
+* stdev = 1839
+* min/max = 517/11092
+
 
 #### Modelling approach
 * Create a segmentation model that will create a bounding box around the snake in a given image.
@@ -39,7 +49,7 @@ alt="Average Recall"
 width"500">
 Around epoch 13 the performance levels off around **R=0.58**
 
-Both these metrics support the decision to stop training the segmentation model after 13 epochs. The model performs quite well at segmenting out the snakes from a given out-of-training sample image, some examples:
+Both these metrics support the decision to stop training the segmentation model after 13 epochs. The model performs quite well at segmenting out the snakes from a given out-of-training sample image, some examples of segmentations:  
 <p allign="middle">
 <img src="./imgs/segm_snake1.jpg" width="400" />
 <img src="./imgs/segm_snake5.jpg" width="400" />
@@ -48,3 +58,6 @@ Both these metrics support the decision to stop training the segmentation model 
 <img src="./imgs/segm_snake3.jpg" width="400" />
 <img src="./imgs/segm_snake2.jpg" width="400" />
 </p>  
+
+In the above images is it clear that the segmentation model can do quite well. In the two images on the left side the shape of the snake is not obstructed by some other object. In the images on the right side, the model struggles a bit because part of the snake is partly obstructed from view.  
+Overall though, the segmentation model does quite well and will benefit the performance of a classification model in a preprocessing step.
