@@ -24,7 +24,7 @@ Some descriptive statistics of the number of examples:
 * Create a segmentation model that will create a bounding box around the snake in a given image.
 * Create a classification model with input the segmented snake image.
 
-##### Segmentaion model
+##### Segmentation model
 To create the segmentation model there was the need to create a segmented training set first. Using [Label Studio](https://github.com/heartexlabs/label-studio), the snakes in 900 images were annotated.  
 The annotated images were used to fine-tune a pre-trained Faster R-CNN model using PyTorch. An 80/20 split was used for training/test images for 20 epochs with a random horizontal flip for data augmentation. Training metrics were plotted to tensorboard.
 
