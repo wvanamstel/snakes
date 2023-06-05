@@ -25,7 +25,7 @@ def transform_image(train):
     """transform_image.
     Transform images for segmentation model training
 
-    :param train:
+    :param train: (bool) True for training set, False otherwise
     """
     transforms = []
     transforms.append(T.ToTensor())
@@ -78,6 +78,10 @@ class SnakeSegmentationDataset(object):
 
 
 def get_segmentation_model(num_classes):
+    """get_segmentation_model.
+
+    :param num_classes: (int) number of classes (2 for the bounding box, snake/no snake)
+    """
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -89,14 +93,15 @@ def main():
 
     num_classes = 2
     batch_size = 3
+    # Set up data loaders for train/test split
     dataset = SnakeSegmentationDataset(transform_image(train=True))
     dataset_test = SnakeSegmentationDataset(transform_image(train=False))
 
     rand_gen = torch.Generator()
     rand_gen.manual_seed(0)
     indices = torch.randperm(len(dataset), generator=rand_gen).tolist()
-    # indices = indices[:50]
 
+    # Use a 80/20 train/test split
     num_examples = len(indices)
     dataset = torch.utils.data.Subset(dataset, indices[: -int(num_examples * 0.2)])
     dataset_test = torch.utils.data.Subset(
@@ -114,6 +119,7 @@ def main():
         collate_fn=utils.collate_fn,
     )
 
+    # Set up the segmentation model for fine tuning
     model = get_segmentation_model(num_classes)
     model.to(device)
 
@@ -126,7 +132,10 @@ def main():
 
     eval_results = []
     training_metrics = []
+
+    # start training
     for epoch in range(num_epochs):
+        # During training, write results to tensorboard
         metrics = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         WRITER.add_scalar("Segmentation/train loss", metrics.meters["loss"].avg, epoch)
         training_metrics.append(metrics)
