@@ -6,13 +6,17 @@ from glob import glob
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
-DATA_PATH = os.path.join(os.environ["LOCAL_DATA_PATH"], "crowdai", "snakes")
+DATA_PATH = os.path.join(os.environ["DATA_PATH"], "crowdai", "snakes")
+SEGMENTATION_MODEL_PATH = os.path.join(os.environ["DATA_PATH"], "aicrowd/snakes/segm_model")
+
+SEG_MODEL = torch.load(os.path.join(SEGMENTATION_MODEL_PATH, "snake_seg.pt"))
 
 with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
     classes = [cl.split(',') for cl in f_in.readlines()[1:]]
     label_to_id = {_cl[1].rstrip(): _cl[0] for _cl in classes}
 
 train_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
+
 
 class SnakeData(Dataset):
     def __init__(self, file_names, transformation=None):

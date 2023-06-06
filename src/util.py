@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -75,3 +76,9 @@ class SnakeData(Dataset):
         if self.transformation:
             image = self.transformation(image)
         return image, label
+
+
+def load_segmentation_model(model_path: str):
+    seg_model = torch.load(model_path)
+    return seg_model
+
