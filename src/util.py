@@ -3,6 +3,8 @@ import torch
 
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision import transforms as T
+
 
 def find_image_stats(file_name_sample):
     images = [Image.open(im) for im in file_name_sample]
@@ -78,7 +80,5 @@ class SnakeData(Dataset):
         return image, label
 
 
-def load_segmentation_model(model_path: str):
-    seg_model = torch.load(model_path)
-    return seg_model
-
+def collate_fn(batch):
+    return tuple(zip(*batch))
