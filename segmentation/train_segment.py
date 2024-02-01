@@ -132,10 +132,7 @@ def main():
 
     eval_results = []
     training_metrics = []
-
-    # start training
     for epoch in range(num_epochs):
-        # During training, write results to tensorboard
         metrics = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         WRITER.add_scalar("Segmentation/train loss", metrics.meters["loss"].avg, epoch)
         training_metrics.append(metrics)

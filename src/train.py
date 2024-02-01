@@ -89,6 +89,6 @@ with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
 train_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
 
 dataset = SnakeClfData(train_samples, label_to_idx, clf_image_transform(train=True), segmentation_model_path=SEGMENTATION_MODEL_PATH)
-data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=collate_fn)
+data_loader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=collate_fn)
 
 
