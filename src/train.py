@@ -2,13 +2,11 @@ import json
 import os
 from glob import glob
 
-import numpy as np
 import torch
 from PIL import Image
 from sklearn.model_selection import StratifiedShuffleSplit
-from torch.nn import Linear, CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, Linear
 from torch.utils.data import DataLoader, Dataset, Subset
-from torchvision import datasets
 from torchvision import models
 from torchvision import transforms as T
 
@@ -47,6 +45,22 @@ def clf_image_transform(train: bool):
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
     return T.Compose(transforms)
+
+
+# Define transforms for training and validation
+image_xforms = {
+    "train": T.Compose(
+        [
+            T.RandomHorizontalFlip(),
+            T.Normalize([128, 120, 105], [54, 51, 50]),
+        ]
+    ),
+    "test": T.Compose(
+        [
+            T.Normalize([128, 120, 105], [54, 51, 50]),
+        ]
+    ),
+}
 
 
 def load_segmentation_model(model_path: str):
@@ -103,7 +117,7 @@ with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
 all_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
 
 # The jpegs are corrupt
-with open(os.path.join(DATA_PATH, 'corrupt_img_files.json'), 'r') as f_in:
+with open(os.path.join(DATA_PATH, "corrupt_img_files.json"), "r") as f_in:
     corrupt_images = json.load(f_in)
 
 # Remove corrupt images from samples
@@ -113,8 +127,8 @@ valid_samples = list(set(all_samples).difference(set(corrupt_images)))
 X = []
 y = []
 for sample in valid_samples:
-    split_sample = sample.split('/train/')
-    y_sample, X_sample = split_sample[1].split('/')
+    split_sample = sample.split("/train/")
+    y_sample, X_sample = split_sample[1].split("/")
     X.append(X_sample)
     y.append(y_sample)
 
@@ -123,20 +137,39 @@ train_indices, test_indices = next(strat_split.split(X, y))
 
 
 # Create the train and test datasets and dataloaders
-dataset = SnakeClfData(
-    valid_samples,
-    label_to_idx,
-    clf_image_transform(train=True),
-    segmentation_model_path=SEGMENTATION_MODEL_PATH,
-)
-
-train_dataset = Subset(dataset, train_indices)
-test_dataset = Subset(dataset, test_indices)
-
-train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True, collate_fn=collate_fn)
-test_loader = DataLoader(test_dataset, batch_size=2, shuffle=False, collate_fn=collate_fn)
+dataset = {
+    x: SnakeClfData(
+        valid_samples,
+        label_to_idx,
+        image_xforms[x],
+        # clf_image_transform(train=True),
+        segmentation_model_path=SEGMENTATION_MODEL_PATH,
+    )
+    for x in ["train", "test"]
+}
 
 
+# train_dataset = Subset(dataset['train'], train_indices)
+# test_dataset = Subset(dataset['test'], test_indices)
+
+# train_loader = DataLoader(
+# train_dataset, batch_size=2, shuffle=True, collate_fn=collate_fn
+# )
+# test_loader = DataLoader(
+# test_dataset, batch_size=2, shuffle=False, collate_fn=collate_fn
+# )
+
+shuffle_data = {"train": True, "test": False}
+phase_indices = {"train": train_indices, "test": test_indices}
+
+data_loader = {
+    x: DataLoader(
+        Subset(dataset[x], phase_indices[x]),
+        shuffle=shuffle_data[x],
+        # collate_fn=collate_fn,
+    )
+    for x in ["train", "test"]
+}
 
 
 #############################
@@ -151,6 +184,31 @@ crit = CrossEntropyLoss()
 optimizer = torch.optim.SGD(clf_model.parameters(), lr=0.001, momentum=0.9)
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
-num_of_epochs = 5
-# for epoch in range(num_of_epochs):
+num_of_epochs = 1
+for epoch in range(num_of_epochs):
+    print(f"Epoch: {epoch}/{num_of_epochs - 1}")
 
+    for phase in ["train", "test"]:
+        if phase == "train":
+            clf_model.train()
+        else:
+            clf_model.eval()
+
+        loss = 0.0
+        correct = 0
+
+        for inputs, labels in data_loader[phase]:
+            inputs.to(DEVICE)
+            labels.to(DEVICE)
+
+            optimizer.zero_grad()
+
+            # Only calculate gradients in the training phase
+            with torch.set_grad_enabled(phase == 'train'):
+                outputs = clf_model(inputs)
+                _, preds = torch.max(outputs, 1)
+                loss = crit(outputs, labels)
+
+                if phase == 'train':
+                    loss.backward()
+                    optimizer.step()
