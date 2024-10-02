@@ -1,18 +1,22 @@
 import json
 import os
 from glob import glob
+import random
 
 import torch
 from PIL import Image
+from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.model_selection import StratifiedShuffleSplit
 from torch.nn import CrossEntropyLoss, Linear
 from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import models
 from torchvision import transforms as T
 
-from util import collate_fn
-
 DATA_PATH = os.path.join(os.environ["DATA_PATH"], "aicrowd", "snakes")
+LOG_PATH = os.path.join(DATA_PATH, "aicrowd", "snakes", "logs")
+
+WRITER = SummaryWriter(log_dir=LOG_PATH)
 
 SEGMENTATION_MODEL_PATH = os.path.join(
     os.environ["DATA_PATH"], "aicrowd/snakes/segm_model", "snake_seg.pt"
@@ -71,6 +75,7 @@ class SnakeClfData(Dataset):
         image_id = self.label_to_id[image_id]
         if self.seg_model:
             segmentation = self.seg_model(image.unsqueeze(0))
+            # Test if a segmentation was generated
             if segmentation[0]["boxes"].numel() != 0:
                 mask = segmentation[0]["boxes"].to(torch.int)[0]
                 mask_height = mask[3] - mask[1]
@@ -94,14 +99,14 @@ with open(os.path.join(DATA_PATH, "class_idx_mapping.csv"), "r") as f_in:
 # Set up dataloader for train/test sets
 all_samples = glob(os.path.join(DATA_PATH, "train") + "/*/*", recursive=True)
 
-# The jpegs are corrupt
+# Load the jpegs are corrupt
 with open(os.path.join(DATA_PATH, "corrupt_img_files.json"), "r") as f_in:
     corrupt_images = json.load(f_in)
 
 # Remove corrupt images from samples
 valid_samples = list(set(all_samples).difference(set(corrupt_images)))
 
-# Find the sample indices for a stratified train/test split
+# Find the sample indices to create a stratified train/test split
 X = []
 y = []
 for sample in valid_samples:
@@ -127,7 +132,11 @@ dataset = {
 
 
 shuffle_data = {"train": True, "test": False}
-phase_indices = {"train": train_indices[:5000], "test": test_indices[:500]}
+# phase_indices = {"train": train_indices[:1000], "test": test_indices[:200]}
+indices = list(range(len(valid_samples)))
+random.seed(0)
+random.shuffle(indices)
+phase_indices = {"train": indices[:5000], "test": indices[5000:6000]}
 batch_size = 40
 
 data_loader = {
@@ -148,10 +157,11 @@ clf_model = clf_model.to(DEVICE)
 
 crit = CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(clf_model.parameters(), lr=0.001)
-lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
+optimizer = torch.optim.SGD(clf_model.parameters(), lr=0.005, momentum=0.9)
+lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
-num_of_epochs = 5
+num_of_epochs = 10
+metrics = []
 for epoch in range(num_of_epochs):
     print("-" * 20)
     print(f"Epoch: {epoch + 1}/{num_of_epochs}")
@@ -164,6 +174,8 @@ for epoch in range(num_of_epochs):
 
         total_loss = 0.0
         correct = 0
+        all_preds = []
+        all_labels = []
 
         for inputs, labels in data_loader[phase]:
             labels = labels.to(DEVICE)
@@ -180,16 +192,24 @@ for epoch in range(num_of_epochs):
                     loss.backward()
                     optimizer.step()
 
-            total_loss += loss.item() * inputs.size(0)
-            correct += torch.sum(preds == labels.data)
+            total_loss += loss.item() * inputs.shape[0]
+            correct += torch.sum(preds == labels)
+            all_preds.extend(preds.cpu())
+            all_labels.extend(labels.cpu())
 
         if phase == "train":
             lr_scheduler.step()
 
         epoch_loss = total_loss / len(phase_indices[phase])
         epoch_accuracy = correct.double() / len(phase_indices[phase])
+        epoch_precision = precision_score(all_labels, all_preds, average="weighted", zero_division=0)
+        epoch_recall = recall_score(all_labels, all_preds, average="weighted", zero_division=0)
+        epoch_f1 = f1_score(all_labels, all_preds, average="weighted", zero_division=0)
+        metrics.append((epoch, [epoch_accuracy, epoch_precision, epoch_recall, epoch_f1]))
+        # WRITER.add_scalar(f"Classification {phase} loss:", loss, epoch)
+        # WRITER.add_scalar(f"Classification {phase} accuracy:", loss, epoch)
 
         print(f"Phase: {phase}")
         print(
-            f"Epoch loss: {epoch_loss}, accuracy: {epoch_accuracy}, correct: {correct}"
+                f"Epoch loss: {epoch_loss}, accuracy: {epoch_accuracy}, correct: {correct}, \nprecision: {epoch_precision}, recall: {epoch_recall}, f1: {epoch_f1}"
         )
