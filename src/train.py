@@ -1,9 +1,11 @@
 import json
+import time
 import os
 from glob import glob
 import random
 
 import torch
+import torch.cuda.amp as amp
 from PIL import Image
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -125,18 +127,18 @@ dataset = {
         valid_samples,
         label_to_idx,
         image_xforms[x],
-        segmentation_model_path=SEGMENTATION_MODEL_PATH,
+        # segmentation_model_path=SEGMENTATION_MODEL_PATH,
     )
     for x in ["train", "test"]
 }
 
 
 shuffle_data = {"train": True, "test": False}
-# phase_indices = {"train": train_indices[:1000], "test": test_indices[:200]}
-indices = list(range(len(valid_samples)))
-random.seed(0)
-random.shuffle(indices)
-phase_indices = {"train": indices[:5000], "test": indices[5000:6000]}
+phase_indices = {"train": train_indices, "test": test_indices}
+# indices = list(range(len(valid_samples)))
+# random.seed(0)
+# random.shuffle(indices)
+# phase_indices = {"train": indices[:5000], "test": indices[5000:6000]}
 batch_size = 40
 
 data_loader = {
@@ -160,9 +162,12 @@ crit = CrossEntropyLoss()
 optimizer = torch.optim.SGD(clf_model.parameters(), lr=0.005, momentum=0.9)
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
+scaler = amp.GradScaler()
+
 num_of_epochs = 10
 metrics = []
 for epoch in range(num_of_epochs):
+    tic = time.time()
     print("-" * 20)
     print(f"Epoch: {epoch + 1}/{num_of_epochs}")
 
@@ -184,11 +189,15 @@ for epoch in range(num_of_epochs):
 
             # Only calculate gradients in the training phase
             with torch.set_grad_enabled(phase == "train"):
+                # with amp.autocast():
                 outputs = clf_model(inputs)
                 _, preds = torch.max(outputs, 1)
                 loss = crit(outputs, labels)
 
                 if phase == "train":
+                    # scaler.scale(loss).backward()
+                    # scaler.step(optimizer)
+                    # scaler.update()
                     loss.backward()
                     optimizer.step()
 
@@ -199,6 +208,9 @@ for epoch in range(num_of_epochs):
 
         if phase == "train":
             lr_scheduler.step()
+            toc = time.time()
+
+        epoch_elapsed_time = toc - tic
 
         epoch_loss = total_loss / len(phase_indices[phase])
         epoch_accuracy = correct.double() / len(phase_indices[phase])
@@ -209,7 +221,7 @@ for epoch in range(num_of_epochs):
         # WRITER.add_scalar(f"Classification {phase} loss:", loss, epoch)
         # WRITER.add_scalar(f"Classification {phase} accuracy:", loss, epoch)
 
-        print(f"Phase: {phase}")
+        print(f"Phase: {phase}, elapsed time: {epoch_elapsed_time}")
         print(
                 f"Epoch loss: {epoch_loss}, accuracy: {epoch_accuracy}, correct: {correct}, \nprecision: {epoch_precision}, recall: {epoch_recall}, f1: {epoch_f1}"
         )
